@@ -10,27 +10,27 @@ func main() {
 
 	mux := http.NewServeMux()
 	corsMux := middlewareCors(mux)
+	cfg := apiConfig{}
 
 	server := &http.Server{
 		Addr:    ":" + port,
 		Handler: corsMux,
 	}
 
-	mux.Handle("/", http.FileServer(http.Dir(".")))
+	fsHandler := http.FileServer(http.Dir("."))
+	strippedHandler := http.StripPrefix("/app", fsHandler)
+	metricsOnHandler := cfg.middlewareMetricsHits(strippedHandler)
+	mux.Handle("/app/", metricsOnHandler)
+
+	mux.HandleFunc("/healthz", handleHealth)
+	mux.HandleFunc("/metrics", cfg.getMetricsHandler)
+	mux.HandleFunc("/reset", cfg.resetMetricsHandler)
 
 	log.Println("Starting server on port", port)
 	log.Fatal(server.ListenAndServe())
 }
 
-func middlewareCors(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "*")
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.Write([]byte("OK"))
 }
