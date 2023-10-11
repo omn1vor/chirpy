@@ -1,0 +1,14 @@
+@url = http://localhost:8080
+
+###
+GET {{url}}/app
+###
+GET {{url}}/metrics
+###
+GET {{url}}/reset
+###
+GET {{url}}/healthz
+### Shouldn't work
+POST {{url}}/metrics
+### Shouldn't work
+POST {{url}}/healthz
