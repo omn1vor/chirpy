@@ -3,7 +3,7 @@
 ###
 GET {{url}}/app
 ###
-GET {{url}}/metrics
+GET {{url}}/admin/metrics
 ###
 GET {{url}}/reset
 ###

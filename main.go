@@ -28,9 +28,13 @@ func main() {
 
 	apiRouter := chi.NewRouter()
 	apiRouter.Get("/healthz", handleHealth)
-	apiRouter.Get("/metrics", cfg.getMetricsHandler)
+	apiRouter.Get("/reset", cfg.resetMetricsHandler)
 	apiRouter.Get("/reset", cfg.resetMetricsHandler)
 	r.Mount("/api", apiRouter)
+
+	adminRouter := chi.NewRouter()
+	adminRouter.Get("/metrics", cfg.getMetricsHandler)
+	r.Mount("/admin", adminRouter)
 
 	log.Printf("Serving files from path %s on port %s\n", fileServerPath, port)
 	log.Fatal(server.ListenAndServe())
