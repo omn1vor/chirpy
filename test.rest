@@ -12,3 +12,15 @@ GET {{url}}/healthz
 POST {{url}}/metrics
 ### Shouldn't work
 POST {{url}}/healthz
+###
+POST {{url}}/api/validate_chirp
+
+{
+    "body": "I'm an OK body"
+}
+###
+POST {{url}}/api/validate_chirp
+
+{
+    "body": "I'm too long, should return an error                                                   _________________________________________________________________________________________________________________"
+}
