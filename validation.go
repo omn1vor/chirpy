@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 const chirpMaxLen = 140
@@ -10,31 +11,34 @@ const chirpMaxLen = 140
 func validateChirp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
-	encoder := json.NewEncoder(w)
 
 	chirp := chirpDto{}
 	err := decoder.Decode(&chirp)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		encoder.Encode(errorDto{
-			Error: "Can't decode chirp body: " + err.Error(),
-		})
+		respondWithError(w, http.StatusInternalServerError, "Can't decode chirp body: "+err.Error())
 		return
 	}
 
 	if len(chirp.Body) > chirpMaxLen {
-		w.WriteHeader(http.StatusBadRequest)
-		encoder.Encode(errorDto{
-			Error: "Chirp is too long",
-		})
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 
+	const profaneMask = "****"
+	badWords := profaneWords()
+	allWords := strings.Split(chirp.Body, " ")
+	for i, word := range allWords {
+		if _, ok := badWords[strings.ToLower(word)]; ok {
+			allWords[i] = profaneMask
+		}
+	}
+
+	encoder := json.NewEncoder(w)
 	w.WriteHeader(http.StatusOK)
 	encoder.Encode(
 		struct {
-			Valid bool `json:"valid"`
+			CleanedBody string `json:"cleaned_body"`
 		}{
-			Valid: true,
+			CleanedBody: strings.Join(allWords, " "),
 		})
 }

@@ -16,7 +16,7 @@ POST {{url}}/healthz
 POST {{url}}/api/validate_chirp
 
 {
-    "body": "I'm an OK body"
+    "body": "I'm an OK body, kerfuffle it! Fornax! SHARBERT"
 }
 ###
 POST {{url}}/api/validate_chirp
