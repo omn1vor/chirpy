@@ -46,6 +46,7 @@ func main() {
 	apiRouter.Get("/reset", cfg.resetMetricsHandler)
 	apiRouter.Get("/reset", cfg.resetMetricsHandler)
 	apiRouter.Get("/chirps", cfg.getChirps)
+	apiRouter.Get("/chirps/{id}", cfg.getChirp)
 	apiRouter.Post("/chirps", cfg.addChirp)
 	r.Mount("/api", apiRouter)
 
@@ -76,6 +77,6 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 		respondWithError(w, http.StatusInternalServerError, "Can't encode chirps to JSON: "+err.Error())
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(code)
 	w.Write(data)
 }

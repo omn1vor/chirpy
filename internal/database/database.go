@@ -75,6 +75,22 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	return chirps, nil
 }
 
+func (db *DB) GetChirp(id int) (*Chirp, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+
+	entries, err := db.loadDB()
+	if err != nil {
+		return nil, err
+	}
+
+	chirp, ok := entries.Chirps[id]
+	if !ok {
+		return nil, nil
+	}
+	return &chirp, nil
+}
+
 // ensureDB creates a new database file if it doesn't exist
 func (db *DB) ensureDB() error {
 	file, err := os.OpenFile(db.path, os.O_CREATE|os.O_RDWR, 0666)

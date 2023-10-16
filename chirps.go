@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 const chirpMaxLen = 140
@@ -40,4 +43,24 @@ func (cfg *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondWithJson(w, http.StatusOK, chirps)
+}
+
+func (cfg *apiConfig) getChirp(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Wrong chirp ID")
+		return
+	}
+
+	chirp, err := cfg.db.GetChirp(id)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error while getting chirp: "+err.Error())
+		return
+	}
+	if chirp == nil {
+		respondWithError(w, http.StatusNotFound, "ID not found")
+		return
+	}
+	respondWithJson(w, http.StatusOK, chirp)
 }
