@@ -19,3 +19,6 @@
 
 # Go workspace file
 go.work
+
+# JSON files (used as a database)
+*.json

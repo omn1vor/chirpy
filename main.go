@@ -6,13 +6,27 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/omn1vor/chirpy/internal/database"
 )
+
+type apiConfig struct {
+	fileserverHits int
+	db             *database.DB
+}
 
 func main() {
 	const port = "8080"
 	const fileServerPath = "."
+	const dbPath = "database.json"
 
-	cfg := apiConfig{}
+	db, err := database.NewDB(dbPath)
+	if err != nil {
+		log.Fatal("Error creating a database file:", err.Error())
+	}
+
+	cfg := apiConfig{
+		db: db,
+	}
 	r := chi.NewRouter()
 	corsMux := middlewareCors(r)
 
@@ -31,7 +45,8 @@ func main() {
 	apiRouter.Get("/healthz", handleHealth)
 	apiRouter.Get("/reset", cfg.resetMetricsHandler)
 	apiRouter.Get("/reset", cfg.resetMetricsHandler)
-	apiRouter.Post("/validate_chirp", validateChirp)
+	apiRouter.Get("/chirps", cfg.getChirps)
+	apiRouter.Post("/chirps", cfg.addChirp)
 	r.Mount("/api", apiRouter)
 
 	adminRouter := chi.NewRouter()
@@ -53,4 +68,14 @@ func respondWithError(w http.ResponseWriter, code int, msg string) {
 	encoder.Encode(errorDto{
 		Error: msg,
 	})
+}
+
+func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Can't encode chirps to JSON: "+err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	w.Write(data)
 }
