@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/omn1vor/chirpy/internal/database"
+	"github.com/omn1vor/chirpy/internal/dto"
 )
 
 type apiConfig struct {
@@ -58,6 +59,7 @@ func main() {
 	apiRouter.Get("/chirps/{id}", cfg.getChirp)
 	apiRouter.Post("/chirps", cfg.addChirp)
 	apiRouter.Post("/users", cfg.addUser)
+	apiRouter.Post("/login", cfg.loginUser)
 	r.Mount("/api", apiRouter)
 
 	adminRouter := chi.NewRouter()
@@ -76,7 +78,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 func respondWithError(w http.ResponseWriter, code int, msg string) {
 	w.WriteHeader(code)
 	encoder := json.NewEncoder(w)
-	encoder.Encode(errorDto{
+	encoder.Encode(dto.ErrorDto{
 		Error: msg,
 	})
 }

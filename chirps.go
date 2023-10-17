@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/omn1vor/chirpy/internal/dto"
 )
 
 const chirpMaxLen = 140
@@ -14,7 +15,7 @@ func (cfg *apiConfig) addChirp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	decoder := json.NewDecoder(r.Body)
 
-	dto := chirpDto{}
+	dto := dto.ChirpDto{}
 	err := decoder.Decode(&dto)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Can't decode chirp body: "+err.Error())

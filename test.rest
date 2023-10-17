@@ -32,5 +32,27 @@ GET {{url}}/api/chirps/3
 POST {{url}}/api/users
 
 {
-    "email": "author@chirps.com"
+    "email": "author@chirps.com",
+    "password": "my pass"
+}
+###
+POST {{url}}/api/login
+
+{
+    "email": "author@chirps.com",
+    "password": "my pass"
+}
+###
+POST {{url}}/api/login
+
+{
+    "email": "wrong@chirps.com",
+    "password": "some pass"
+}
+###
+POST {{url}}/api/login
+
+{
+    "email": "author@chirps.com",
+    "password": "some pass"
 }
