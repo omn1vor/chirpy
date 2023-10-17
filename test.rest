@@ -28,3 +28,9 @@ POST {{url}}/api/chirps
 }
 ###
 GET {{url}}/api/chirps/3
+###
+POST {{url}}/api/users
+
+{
+    "email": "author@chirps.com"
+}

@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/omn1vor/chirpy/internal/database"
@@ -18,6 +20,13 @@ func main() {
 	const port = "8080"
 	const fileServerPath = "."
 	const dbPath = "database.json"
+
+	debug := flag.Bool("debug", false, "Enable debug mode")
+	flag.Parse()
+
+	if *debug {
+		os.Remove(dbPath)
+	}
 
 	db, err := database.NewDB(dbPath)
 	if err != nil {
@@ -48,6 +57,7 @@ func main() {
 	apiRouter.Get("/chirps", cfg.getChirps)
 	apiRouter.Get("/chirps/{id}", cfg.getChirp)
 	apiRouter.Post("/chirps", cfg.addChirp)
+	apiRouter.Post("/users", cfg.addUser)
 	r.Mount("/api", apiRouter)
 
 	adminRouter := chi.NewRouter()
