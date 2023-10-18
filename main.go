@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 	"github.com/omn1vor/chirpy/internal/database"
 	"github.com/omn1vor/chirpy/internal/dto"
 )
@@ -15,9 +16,13 @@ import (
 type apiConfig struct {
 	fileserverHits int
 	db             *database.DB
+	serviceId      string
+	jwtSecret      string
 }
 
 func main() {
+	godotenv.Load()
+
 	const port = "8080"
 	const fileServerPath = "."
 	const dbPath = "database.json"
@@ -35,7 +40,9 @@ func main() {
 	}
 
 	cfg := apiConfig{
-		db: db,
+		db:        db,
+		serviceId: "chirpy",
+		jwtSecret: os.Getenv("JWT_SECRET"),
 	}
 	r := chi.NewRouter()
 	corsMux := middlewareCors(r)
@@ -59,6 +66,7 @@ func main() {
 	apiRouter.Get("/chirps/{id}", cfg.getChirp)
 	apiRouter.Post("/chirps", cfg.addChirp)
 	apiRouter.Post("/users", cfg.addUser)
+	apiRouter.Put("/users", cfg.updateUser)
 	apiRouter.Post("/login", cfg.loginUser)
 	r.Mount("/api", apiRouter)
 

@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/omn1vor/chirpy/internal/dto"
 )
 
@@ -47,6 +49,29 @@ func (db *DB) FindUserByEmail(email string) (*User, error) {
 		}
 	}
 	return nil, nil
+}
+
+func (db *DB) UpdateUser(id int, userRequest dto.UserRequest) (*dto.UserResponse, error) {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+
+	entries, err := db.loadDB()
+	if err != nil {
+		return nil, err
+	}
+
+	user, ok := entries.Users[id]
+	if !ok {
+		return nil, fmt.Errorf("User with ID %d not found", id)
+	}
+
+	user.Email = userRequest.Email
+	user.PwdHash = userRequest.Password
+	entries.Users[id] = user
+
+	db.writeDB(entries)
+
+	return user.ToDto(), nil
 }
 
 func (user *User) ToDto() *dto.UserResponse {

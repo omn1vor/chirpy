@@ -2,32 +2,42 @@
 
 ###
 GET {{url}}/app
+
 ###
 GET {{url}}/admin/metrics
+
 ###
 GET {{url}}/reset
+
 ###
 GET {{url}}/healthz
+
 ### Shouldn't work
 POST {{url}}/metrics
+
 ### Shouldn't work
 POST {{url}}/healthz
+
 ###
 GET {{url}}/api/chirps
+
 ###
 POST {{url}}/api/chirps
 
 {
     "body": "I'm an OK body, kerfuffle it! Fornax! SHARBERT"
 }
+
 ###
 POST {{url}}/api/chirps
 
 {
     "body": "I'm too long, should return an error                                                   _________________________________________________________________________________________________________________"
 }
+
 ###
 GET {{url}}/api/chirps/3
+
 ###
 POST {{url}}/api/users
 
@@ -35,24 +45,45 @@ POST {{url}}/api/users
     "email": "author@chirps.com",
     "password": "my pass"
 }
+
 ###
+# @name login_response 
 POST {{url}}/api/login
 
 {
     "email": "author@chirps.com",
     "password": "my pass"
 }
-###
+
+### Shouldn't work
 POST {{url}}/api/login
 
 {
     "email": "wrong@chirps.com",
     "password": "some pass"
 }
-###
+
+### Shouldn't work
 POST {{url}}/api/login
 
 {
     "email": "author@chirps.com",
     "password": "some pass"
+}
+
+###
+PUT {{url}}/api/users
+Authorization: Bearer {{login_response.response.body.token}}
+
+{
+    "email": "author@gmail.com",
+    "password": "new pass"
+}
+
+###
+POST {{url}}/api/login
+
+{
+    "email": "author@gmail.com",
+    "password": "new pass"
 }

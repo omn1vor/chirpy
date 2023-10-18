@@ -22,3 +22,6 @@ go.work
 
 # JSON files (used as a database)
 *.json
+
+# Environment
+.env
