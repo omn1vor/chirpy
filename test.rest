@@ -52,7 +52,8 @@ POST {{url}}/api/login
 
 {
     "email": "author@chirps.com",
-    "password": "my pass"
+    "password": "my pass",
+    "expires_in_seconds": 10
 }
 
 ### Shouldn't work
@@ -80,6 +81,15 @@ Authorization: Bearer {{login_response.response.body.token}}
     "password": "new pass"
 }
 
+### Update user using wrong token
+PUT {{url}}/api/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
+{
+    "email": "author@gmail.com",
+    "password": "new pass"
+}
+
 ###
 POST {{url}}/api/login
 
@@ -87,3 +97,11 @@ POST {{url}}/api/login
     "email": "author@gmail.com",
     "password": "new pass"
 }
+
+### Refresh token
+POST {{url}}/api/refresh
+Authorization: Bearer {{login_response.response.body.refresh_token}}
+
+### Revoke refresh token
+POST {{url}}/api/revoke
+Authorization: Bearer {{login_response.response.body.refresh_token}}

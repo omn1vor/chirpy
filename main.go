@@ -2,48 +2,21 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
-	"github.com/omn1vor/chirpy/internal/database"
 	"github.com/omn1vor/chirpy/internal/dto"
 )
-
-type apiConfig struct {
-	fileserverHits int
-	db             *database.DB
-	serviceId      string
-	jwtSecret      string
-}
 
 func main() {
 	godotenv.Load()
 
 	const port = "8080"
 	const fileServerPath = "."
-	const dbPath = "database.json"
 
-	debug := flag.Bool("debug", false, "Enable debug mode")
-	flag.Parse()
-
-	if *debug {
-		os.Remove(dbPath)
-	}
-
-	db, err := database.NewDB(dbPath)
-	if err != nil {
-		log.Fatal("Error creating a database file:", err.Error())
-	}
-
-	cfg := apiConfig{
-		db:        db,
-		serviceId: "chirpy",
-		jwtSecret: os.Getenv("JWT_SECRET"),
-	}
+	cfg := newApiConfig()
 	r := chi.NewRouter()
 	corsMux := middlewareCors(r)
 
@@ -68,6 +41,8 @@ func main() {
 	apiRouter.Post("/users", cfg.addUser)
 	apiRouter.Put("/users", cfg.updateUser)
 	apiRouter.Post("/login", cfg.loginUser)
+	apiRouter.Post("/refresh", cfg.refreshToken)
+	apiRouter.Post("/revoke", cfg.revokeToken)
 	r.Mount("/api", apiRouter)
 
 	adminRouter := chi.NewRouter()

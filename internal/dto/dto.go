@@ -10,9 +10,8 @@ type UserRequest struct {
 }
 
 type LoginRequest struct {
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	ExpiresAt int    `json:"expires_in_seconds"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type UserResponse struct {

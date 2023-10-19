@@ -86,20 +86,28 @@ func (cfg *apiConfig) loginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := strconv.Itoa(user.Id)
-	token, err := tokens.CreateToken(cfg.jwtSecret, cfg.serviceId, userID, loginRequest.ExpiresAt)
+	token, err := tokens.CreateAccessToken(cfg.jwtSecret, cfg.serviceId+"-access", userID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error while creating token: "+err.Error())
+		respondWithError(w, http.StatusInternalServerError, "Error while creating access token: "+err.Error())
+		return
+	}
+
+	refreshToken, err := tokens.CreateRefreshToken(cfg.jwtSecret, cfg.serviceId+"-refresh", userID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error while creating refresh token: "+err.Error())
 		return
 	}
 
 	loggedUserDto := struct {
-		Id    string `json:"id"`
-		Email string `json:"email"`
-		Token string `json:"token"`
+		Id           string `json:"id"`
+		Email        string `json:"email"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}{
-		Id:    userID,
-		Email: user.Email,
-		Token: token,
+		Id:           userID,
+		Email:        user.Email,
+		Token:        token,
+		RefreshToken: refreshToken,
 	}
 
 	respondWithJson(w, http.StatusOK, loggedUserDto)
@@ -114,7 +122,8 @@ func (cfg *apiConfig) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := tokens.GetUserIdFromToken(cfg.jwtSecret, strings.TrimPrefix(authHeader, "Bearer "))
+	issuer := cfg.serviceId + "-access"
+	userID, err := tokens.GetUserIdFromToken(cfg.jwtSecret, issuer, auth.GetTokenStringFromAuthHeader(authHeader))
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, err.Error())
 		return
@@ -122,7 +131,7 @@ func (cfg *apiConfig) updateUser(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(userID)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Wrong user ID format: "+userID)
+		respondWithError(w, http.StatusUnauthorized, "Wrong user ID format: "+userID)
 		return
 	}
 
@@ -158,4 +167,66 @@ func (cfg *apiConfig) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondWithJson(w, http.StatusOK, user)
+}
+
+func (cfg *apiConfig) refreshToken(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		respondWithError(w, http.StatusUnauthorized, "Expecting JWT authorization")
+		return
+	}
+
+	tokenString := auth.GetTokenStringFromAuthHeader(authHeader)
+	issuer := cfg.serviceId + "-refresh"
+	userID, err := tokens.GetUserIdFromToken(cfg.jwtSecret, issuer, tokenString)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	if ok, err := cfg.db.TokenIsNotRevoked(tokenString); !ok {
+		respondWithError(w, http.StatusUnauthorized, "Token is revoked")
+		return
+	} else if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error while checking token status")
+		return
+	}
+
+	token, err := tokens.CreateAccessToken(cfg.jwtSecret, cfg.serviceId+"-access", userID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error while creating access token: "+err.Error())
+		return
+	}
+	response := struct {
+		Token string `json:"token"`
+	}{
+		Token: token,
+	}
+	respondWithJson(w, http.StatusOK, response)
+}
+
+func (cfg *apiConfig) revokeToken(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		respondWithError(w, http.StatusUnauthorized, "Expecting JWT authorization")
+		return
+	}
+
+	tokenString := auth.GetTokenStringFromAuthHeader(authHeader)
+	issuer := cfg.serviceId + "-refresh"
+	if _, err := tokens.GetUserIdFromToken(cfg.jwtSecret, issuer, tokenString); err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	if err := cfg.db.RevokeToken(tokenString); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

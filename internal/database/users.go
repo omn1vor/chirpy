@@ -29,7 +29,9 @@ func (db *DB) CreateUser(userRequest dto.UserRequest) (*dto.UserResponse, error)
 	}
 	entries.Users[maxId] = user
 
-	db.writeDB(entries)
+	if err = db.writeDB(entries); err != nil {
+		return nil, err
+	}
 
 	return user.ToDto(), nil
 }
