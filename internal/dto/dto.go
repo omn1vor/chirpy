@@ -1,7 +1,8 @@
 package dto
 
 type ChirpDto struct {
-	Body string `json:"body"`
+	Body     string `json:"body"`
+	AuthorId int    `json:"aouthor_id"`
 }
 
 type UserRequest struct {

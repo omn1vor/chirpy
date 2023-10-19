@@ -10,19 +10,20 @@ GET {{url}}/admin/metrics
 GET {{url}}/reset
 
 ###
-GET {{url}}/healthz
+GET {{url}}/api/healthz
 
 ### Shouldn't work
-POST {{url}}/metrics
+POST {{url}}/admin/metrics
 
 ### Shouldn't work
-POST {{url}}/healthz
+POST {{url}}/api/healthz
 
 ###
 GET {{url}}/api/chirps
 
 ###
 POST {{url}}/api/chirps
+Authorization: Bearer {{login_response.response.body.token}}
 
 {
     "body": "I'm an OK body, kerfuffle it! Fornax! SHARBERT"

@@ -1,14 +1,19 @@
 package database
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/omn1vor/chirpy/internal/dto"
+)
 
 type Chirp struct {
-	Id   int    `json:"id"`
-	Body string `json:"body"`
+	Id       int    `json:"id"`
+	Body     string `json:"body"`
+	AuthorId int    `json:"author_id"`
 }
 
 // CreateChirp creates a new chirp and saves it to disk
-func (db *DB) CreateChirp(body string) (*Chirp, error) {
+func (db *DB) CreateChirp(chirpDto dto.ChirpDto) (*Chirp, error) {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 
@@ -19,8 +24,9 @@ func (db *DB) CreateChirp(body string) (*Chirp, error) {
 
 	maxId := len(entries.Chirps) + 1
 	chirp := Chirp{
-		Id:   maxId,
-		Body: body,
+		Id:       maxId,
+		Body:     chirpDto.Body,
+		AuthorId: chirpDto.AuthorId,
 	}
 	entries.Chirps[maxId] = chirp
 

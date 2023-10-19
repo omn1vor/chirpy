@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,6 +11,21 @@ import (
 	"github.com/omn1vor/chirpy/internal/dto"
 	"github.com/omn1vor/chirpy/internal/tokens"
 )
+
+func (cfg *apiConfig) getAuthenticatedUserID(r *http.Request) (string, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return "", errors.New("expecting JWT authorization")
+	}
+
+	tokenString := auth.GetTokenStringFromAuthHeader(authHeader)
+	issuer := cfg.serviceId + "-access"
+	userID, err := tokens.GetUserIdFromToken(cfg.jwtSecret, issuer, tokenString)
+	if err != nil {
+		return "", err
+	}
+	return userID, nil
+}
 
 func (cfg *apiConfig) addUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -116,14 +132,7 @@ func (cfg *apiConfig) loginUser(w http.ResponseWriter, r *http.Request) {
 func (cfg *apiConfig) updateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		respondWithError(w, http.StatusUnauthorized, "Expecting JWT authorization")
-		return
-	}
-
-	issuer := cfg.serviceId + "-access"
-	userID, err := tokens.GetUserIdFromToken(cfg.jwtSecret, issuer, auth.GetTokenStringFromAuthHeader(authHeader))
+	userID, err := cfg.getAuthenticatedUserID(r)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, err.Error())
 		return

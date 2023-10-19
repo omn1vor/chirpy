@@ -13,21 +13,35 @@ const chirpMaxLen = 140
 
 func (cfg *apiConfig) addChirp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	userID, err := cfg.getAuthenticatedUserID(r)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	authorID, err := strconv.Atoi(userID)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 
-	dto := dto.ChirpDto{}
-	err := decoder.Decode(&dto)
+	chirpDto := dto.ChirpDto{}
+	err = decoder.Decode(&chirpDto)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Can't decode chirp body: "+err.Error())
 		return
 	}
 
-	if len(dto.Body) > chirpMaxLen {
+	if len(chirpDto.Body) > chirpMaxLen {
 		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 
-	chirp, err := cfg.db.CreateChirp(replaceProfanity(dto.Body))
+	chirpDto.AuthorId = authorID
+	chirpDto.Body = replaceProfanity(chirpDto.Body)
+	chirp, err := cfg.db.CreateChirp(chirpDto)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Can't write chirp to the database: "+err.Error())
 		return
