@@ -45,7 +45,7 @@ func GetUserIdFromToken(sign, issuer, tokenString string) (string, error) {
 
 	claims, err := getValidatedClaims(token, issuer)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	return claims.Subject, nil

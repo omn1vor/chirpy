@@ -23,14 +23,6 @@ GET {{url}}/api/chirps
 
 ###
 POST {{url}}/api/chirps
-Authorization: Bearer {{login_response.response.body.token}}
-
-{
-    "body": "I'm an OK body, kerfuffle it! Fornax! SHARBERT"
-}
-
-###
-POST {{url}}/api/chirps
 
 {
     "body": "I'm too long, should return an error                                                   _________________________________________________________________________________________________________________"
@@ -106,3 +98,16 @@ Authorization: Bearer {{login_response.response.body.refresh_token}}
 ### Revoke refresh token
 POST {{url}}/api/revoke
 Authorization: Bearer {{login_response.response.body.refresh_token}}
+
+
+###
+POST {{url}}/api/chirps
+Authorization: Bearer {{login_response.response.body.token}}
+
+{
+    "body": "I'm an OK body, kerfuffle it! Fornax! SHARBERT"
+}
+
+### Delete chirp
+DELETE {{url}}/api/chirps/1
+Authorization: Bearer {{login_response.response.body.token}}

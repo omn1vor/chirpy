@@ -1,9 +1,11 @@
 package database
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/omn1vor/chirpy/internal/dto"
+	"github.com/omn1vor/chirpy/internal/errs"
 )
 
 type Chirp struct {
@@ -64,7 +66,23 @@ func (db *DB) GetChirp(id int) (*Chirp, error) {
 
 	chirp, ok := entries.Chirps[id]
 	if !ok {
-		return nil, nil
+		return nil, &errs.ErrNotFound{
+			Msg: fmt.Sprintf("Chirp with ID %d not found", id),
+		}
 	}
 	return &chirp, nil
+}
+
+func (db *DB) DeleteChirp(id int) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+
+	entries, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	delete(entries.Chirps, id)
+
+	return nil
 }

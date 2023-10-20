@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/omn1vor/chirpy/internal/dto"
+	"github.com/omn1vor/chirpy/internal/errs"
 )
 
 const chirpMaxLen = 140
@@ -69,13 +71,60 @@ func (cfg *apiConfig) getChirp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chirp, err := cfg.db.GetChirp(id)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error while getting chirp: "+err.Error())
-		return
+	var errNotFound *errs.ErrNotFound
+	switch {
+	case errors.As(err, &errNotFound):
+		respondWithError(w, http.StatusNotFound, errNotFound.Error())
+	default:
+		respondWithError(w, http.StatusInternalServerError, err.Error())
 	}
-	if chirp == nil {
-		respondWithError(w, http.StatusNotFound, "ID not found")
-		return
-	}
+
 	respondWithJson(w, http.StatusOK, chirp)
+}
+
+func (cfg *apiConfig) deleteChirp(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	id := chi.URLParam(r, "id")
+	chirpID, err := strconv.Atoi(id)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Wrong chirp ID: "+id)
+		return
+	}
+
+	userID, err := cfg.getAuthenticatedUserID(r)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	authorID, err := strconv.Atoi(userID)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Wrong author ID: "+userID+": "+err.Error())
+		return
+	}
+
+	chirp, err := cfg.db.GetChirp(chirpID)
+	var errNotFound *errs.ErrNotFound
+	if err != nil {
+		switch {
+		case errors.As(err, &errNotFound):
+			respondWithError(w, http.StatusNotFound, errNotFound.Error())
+			return
+		default:
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	if chirp.AuthorId != authorID {
+		respondWithError(w, http.StatusForbidden, "You can only delete your chirps")
+		return
+	}
+
+	err = cfg.db.DeleteChirp(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
