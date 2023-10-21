@@ -9,6 +9,7 @@ import (
 
 	"github.com/omn1vor/chirpy/internal/auth"
 	"github.com/omn1vor/chirpy/internal/dto"
+	"github.com/omn1vor/chirpy/internal/errs"
 	"github.com/omn1vor/chirpy/internal/tokens"
 )
 
@@ -115,13 +116,15 @@ func (cfg *apiConfig) loginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	loggedUserDto := struct {
-		Id           string `json:"id"`
+		Id           int    `json:"id"`
 		Email        string `json:"email"`
+		IsChirpyRed  bool   `json:"is_chirpy_red"`
 		Token        string `json:"token"`
 		RefreshToken string `json:"refresh_token"`
 	}{
-		Id:           userID,
+		Id:           user.Id,
 		Email:        user.Email,
+		IsChirpyRed:  user.IsChirpyRed,
 		Token:        token,
 		RefreshToken: refreshToken,
 	}
@@ -176,6 +179,37 @@ func (cfg *apiConfig) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondWithJson(w, http.StatusOK, user)
+}
+
+func (cfg *apiConfig) upgradeToChirpyRed(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	decoder := json.NewDecoder(r.Body)
+
+	polkaRequest := dto.PolkaRequest{}
+	err := decoder.Decode(&polkaRequest)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Can't decode polka request: "+err.Error())
+		return
+	}
+
+	if polkaRequest.Event != "user.upgraded" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	err = cfg.db.SetChirpyRed(polkaRequest.Data.UserId, true)
+	var errNotFound *errs.ErrNotFound
+	if err != nil {
+		switch {
+		case errors.As(err, &errNotFound):
+			respondWithError(w, http.StatusNotFound, errNotFound.Error())
+		default:
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (cfg *apiConfig) refreshToken(w http.ResponseWriter, r *http.Request) {

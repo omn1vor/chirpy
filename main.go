@@ -44,6 +44,7 @@ func main() {
 	apiRouter.Post("/login", cfg.loginUser)
 	apiRouter.Post("/refresh", cfg.refreshToken)
 	apiRouter.Post("/revoke", cfg.revokeToken)
+	apiRouter.Post("/polka/webhooks", cfg.upgradeToChirpyRed)
 	r.Mount("/api", apiRouter)
 
 	adminRouter := chi.NewRouter()

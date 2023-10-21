@@ -4,12 +4,14 @@ import (
 	"fmt"
 
 	"github.com/omn1vor/chirpy/internal/dto"
+	"github.com/omn1vor/chirpy/internal/errs"
 )
 
 type User struct {
-	Id      int    `json:"id"`
-	Email   string `json:"email"`
-	PwdHash string `json:"pwd_hash"`
+	Id          int    `json:"id"`
+	Email       string `json:"email"`
+	PwdHash     string `json:"pwd_hash"`
+	IsChirpyRed bool   `json:"is_chirpy_red"`
 }
 
 func (db *DB) CreateUser(userRequest dto.UserRequest) (*dto.UserResponse, error) {
@@ -71,14 +73,49 @@ func (db *DB) UpdateUser(id int, userRequest dto.UserRequest) (*dto.UserResponse
 	user.PwdHash = userRequest.Password
 	entries.Users[id] = user
 
-	db.writeDB(entries)
+	err = db.writeDB(entries)
+	if err != nil {
+		return nil, err
+	}
 
 	return user.ToDto(), nil
 }
 
+func (db *DB) SetChirpyRed(id int, red bool) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+
+	entries, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	user, ok := entries.Users[id]
+	if !ok {
+		return &errs.ErrNotFound{
+			Msg: fmt.Sprintf("User with ID %d not found", id),
+		}
+	}
+
+	if user.IsChirpyRed == red {
+		return nil
+	}
+
+	user.IsChirpyRed = red
+	entries.Users[id] = user
+
+	err = db.writeDB(entries)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (user *User) ToDto() *dto.UserResponse {
 	return &dto.UserResponse{
-		Id:    user.Id,
-		Email: user.Email,
+		Id:          user.Id,
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 }

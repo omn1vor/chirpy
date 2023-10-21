@@ -16,10 +16,18 @@ type LoginRequest struct {
 }
 
 type UserResponse struct {
-	Id    int    `json:"id"`
-	Email string `json:"email"`
+	Id          int    `json:"id"`
+	Email       string `json:"email"`
+	IsChirpyRed bool   `json:"is_chirpy_red"`
 }
 
 type ErrorDto struct {
 	Error string `json:"error"`
+}
+
+type PolkaRequest struct {
+	Event string `json:"event"`
+	Data  struct {
+		UserId int `json:"user_id"`
+	} `json:"data"`
 }
