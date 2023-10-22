@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/omn1vor/chirpy/internal/dto"
 	"github.com/omn1vor/chirpy/internal/errs"
@@ -37,7 +38,7 @@ func (db *DB) CreateChirp(chirpDto dto.ChirpDto) (*Chirp, error) {
 }
 
 // GetChirps returns all chirps in the database
-func (db *DB) GetChirps(authorId int) ([]Chirp, error) {
+func (db *DB) GetChirps(authorId int, sorting string) ([]Chirp, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 
@@ -53,7 +54,11 @@ func (db *DB) GetChirps(authorId int) ([]Chirp, error) {
 		chirps = append(chirps, v)
 	}
 	sort.Slice(chirps, func(i, j int) bool {
-		return chirps[i].Id < chirps[j].Id
+		if strings.ToLower(sorting) == "desc" {
+			return chirps[i].Id > chirps[j].Id
+		} else {
+			return chirps[i].Id < chirps[j].Id
+		}
 	})
 	return chirps, nil
 }

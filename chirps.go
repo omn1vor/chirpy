@@ -54,7 +54,8 @@ func (cfg *apiConfig) addChirp(w http.ResponseWriter, r *http.Request) {
 func (cfg *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	authorId := r.URL.Query().Get("author_id")
+	queryParams := r.URL.Query()
+	authorId := queryParams.Get("author_id")
 	id := -1
 	var err error
 	if authorId != "" {
@@ -65,7 +66,9 @@ func (cfg *apiConfig) getChirps(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	chirps, err := cfg.db.GetChirps(id)
+	sorting := queryParams.Get("sort")
+
+	chirps, err := cfg.db.GetChirps(id, sorting)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error while getting chirps: "+err.Error())
 		return
