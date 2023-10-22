@@ -37,7 +37,7 @@ func (db *DB) CreateChirp(chirpDto dto.ChirpDto) (*Chirp, error) {
 }
 
 // GetChirps returns all chirps in the database
-func (db *DB) GetChirps() ([]Chirp, error) {
+func (db *DB) GetChirps(authorId int) ([]Chirp, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 
@@ -45,8 +45,11 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	if err != nil {
 		return nil, err
 	}
-	chirps := make([]Chirp, 0, len(entries.Chirps))
+	chirps := make([]Chirp, 0)
 	for _, v := range entries.Chirps {
+		if authorId != -1 && v.AuthorId != authorId {
+			continue
+		}
 		chirps = append(chirps, v)
 	}
 	sort.Slice(chirps, func(i, j int) bool {
